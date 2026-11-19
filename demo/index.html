@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Value this project: demo</title>
+<style>
+  :root {
+    --ink: #1a1f2b; --muted: #5b6472; --line: #d9dee6; --bg: #f4f6f8; --card: #fff;
+    --accent: #0b6e6e; --loss: #b4532a; --error: #a3261f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--ink);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  main { max-width: 860px; margin: 0 auto; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 10px; }
+  p.lede { margin: 0 0 20px; color: var(--muted); }
+  label { display: block; font-weight: 600; font-size: 0.9rem; }
+  select, input {
+    font: inherit; color: inherit; width: 100%; padding: 8px 10px; margin-top: 4px;
+    border: 1px solid #8a94a3; border-radius: 6px; background: #fff;
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+  a { color: var(--accent); }
+  .cols { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 20px; }
+  @media (min-width: 640px) { .cols { grid-template-columns: 1fr 1fr; } }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.95rem; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .field { margin-bottom: 14px; }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+  details { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  #errors { color: var(--error); font-weight: 600; margin: 16px 0 0; }
+  #errors:empty { display: none; }
+  #errors ul { margin: 0; padding-left: 20px; }
+  .results { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 20px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+  .stat b { display: block; font-size: 1.25rem; overflow-wrap: anywhere; }
+  .stat.mid { border-color: var(--accent); border-width: 2px; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+  svg { display: block; width: 100%; height: 90px; margin-top: 16px; }
+  .legend { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .swatch { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: baseline; }
+  button {
+    font: inherit; font-weight: 600; margin-top: 18px; padding: 10px 16px; border-radius: 6px;
+    border: 0; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:disabled { background: #9aa3ae; cursor: not-allowed; }
+  .fine { font-size: 0.85rem; color: var(--muted); margin: 14px 0 0; }
+  footer { max-width: 860px; margin: 14px auto 0; font-size: 0.8rem; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Value this project</h1>
+  <p class="lede">Operating plants that sell power today. Public records on the left, your assumptions on the right. The value and the steps behind it update as you type.</p>
+
+  <label for="project">Project</label>
+  <select id="project"></select>
+
+  <div class="cols">
+    <section aria-labelledby="h-facts">
+      <h2 id="h-facts">From public records</h2>
+      <dl id="facts"></dl>
+    </section>
+
+    <section aria-labelledby="h-inputs">
+      <h2 id="h-inputs">Your assumptions</h2>
+      <div class="field">
+        <label for="price">Price ($ per MWh)</label>
+        <input id="price" type="number" step="any" inputmode="decimal">
+        <div class="hint" id="price-src"></div>
+      </div>
+      <div class="field">
+        <label for="output">Output (% of full capacity)</label>
+        <input id="output" type="number" step="any" inputmode="decimal">
+        <div class="hint" id="output-src"></div>
+      </div>
+      <div class="field">
+        <label for="discount">Discount rate (%)</label>
+        <input id="discount" type="number" step="any" inputmode="decimal">
+        <div class="hint">Default: assumption.</div>
+      </div>
+      <div class="field">
+        <label for="life">Remaining life (years)</label>
+        <input id="life" type="number" step="any" inputmode="decimal">
+        <div class="hint" id="life-src"></div>
+      </div>
+      <details>
+        <summary>Ranges (low / high)</summary>
+        <div class="pair">
+          <div><label for="price-low">Price low</label><input id="price-low" type="number" step="any" inputmode="decimal"></div>
+          <div><label for="price-high">Price high</label><input id="price-high" type="number" step="any" inputmode="decimal"></div>
+          <div><label for="output-low">Output low (%)</label><input id="output-low" type="number" step="any" inputmode="decimal"></div>
+          <div><label for="output-high">Output high (%)</label><input id="output-high" type="number" step="any" inputmode="decimal"></div>
+        </div>
+        <div class="hint">Start at 20% either side of your figure. Edit to set your own.</div>
+      </details>
+    </section>
+  </div>
+
+  <div id="errors" role="alert"></div>
+
+  <section class="results" aria-labelledby="h-results">
+    <h2 id="h-results">What the plant's future cash is worth today</h2>
+    <div class="stats">
+      <div class="stat"><span>Low (1 in 10 is worse)</span><b id="p10">-</b></div>
+      <div class="stat mid"><span>Mid</span><b id="p50">-</b><span id="per-kw">-</span></div>
+      <div class="stat"><span>High (1 in 10 is better)</span><b id="p90">-</b></div>
+    </div>
+    <h2 style="margin-top: 20px;">How the mid value is reached</h2>
+    <dl id="steps"></dl>
+    <p class="fine">The Mid box above is the median of 10,000 draws across your low and high values, so it can differ a little from step 5.</p>
+    <div class="stats" style="grid-template-columns: 1fr; margin-top: 14px;">
+      <div class="stat"><span>Chance the value is below zero (price, output and range draws)</span><b id="loss">-</b></div>
+    </div>
+    <svg id="hist" viewBox="0 0 300 90" preserveAspectRatio="none" role="img" aria-label="Spread of 10,000 simulated values"></svg>
+    <div class="legend">
+      <span id="hist-min"></span>
+      <span><span class="swatch" style="background: var(--loss)"></span>below zero
+        &nbsp; <span class="swatch" style="background: var(--accent)"></span>above zero</span>
+      <span id="hist-max"></span>
+    </div>
+    <button id="export" type="button">Export to Excel</button>
+    <span class="hint" id="export-note"></span>
+    <p class="fine">Pre-tax, no debt, no tax credits. Solar and wind only.</p>
+    <p class="fine"><strong>Your assumptions, your number. Not advice.</strong></p>
+  </section>
+</main>
+<footer>Demo by Alexandre Ly. Not an Inframation product.</footer>
+
+<script src="projects.js"></script>
+<script src="calc.js"></script>
+<script src="sheets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  // Fields that have a low/high range. scale turns a fraction into a percent for display.
+  const RANGED = [
+    { id: 'price', key: 'price', scale: 1 },
+    { id: 'output', key: 'capacityFactor', scale: 100 },
+  ];
+  const DEFAULT_DISCOUNT = 8;
+  let project = null;
+  const touched = new Set(); // ranges the user has edited by hand
+  window.lastResult = null;
+
+  const round = (x) => +x.toFixed(3);
+  const num = (id) => ($(id).value.trim() === '' ? NaN : Number($(id).value));
+
+  function el(tag, text, attrs) {
+    const node = document.createElement(tag);
+    if (text != null) node.textContent = text;
+    for (const k in attrs || {}) node.setAttribute(k, attrs[k]);
+    return node;
+  }
+
+  // "source" link or the word "assumption", then any note.
+  function fillSource(node, d) {
+    node.textContent = '';
+    if (d.source === 'assumption') node.append('Default: assumption.');
+    else node.append('Default: ', el('a', 'source', { href: d.source, target: '_blank', rel: 'noopener' }), '.');
+    if (d.note) node.append(' ' + d.note);
+  }
+
+  function centre(f) {
+    const mid = num(f.id);
+    if (!Number.isFinite(mid)) return;
+    const spread = Math.abs(mid) * 0.2;
+    $(f.id + '-low').value = round(mid - spread);
+    $(f.id + '-high').value = round(f.scale === 100 ? Math.min(100, mid + spread) : mid + spread);
+  }
+
+  function selectProject(id) {
+    project = PROJECTS.find((p) => p.id === id);
+    const d = project.defaults;
+    const facts = $('facts');
+    facts.textContent = '';
+    const row = (label, value, src) => {
+      const dd = el('dd', value);
+      if (src) { const hint = el('div', null, { class: 'hint' }); fillSource(hint, src); dd.append(hint); }
+      facts.append(el('dt', label), dd);
+    };
+    row('Capacity', project.mw.toLocaleString() + ' MW');
+    row('Type', 'Solar, operating');
+    row('Began operating', String(project.commissioned));
+    row('2025 output', project.netGenMWh2025.toLocaleString('en-US') + ' MWh');
+    row('Location', project.county);
+    row('Operator', project.company);
+    row('Running cost', '$' + d.fixedOmPerKwYr.value + ' per kW a year', d.fixedOmPerKwYr);
+    const dd = el('dd');
+    dd.append(el('a', 'Inframation project page', { href: project.inframationUrl, target: '_blank', rel: 'noopener' }));
+    facts.append(el('dt', 'Record'), dd);
+
+    touched.clear();
+    for (const f of RANGED) {
+      $(f.id).value = round(d[f.key].value * f.scale);
+      fillSource($(f.id + '-src'), d[f.key]);
+      centre(f);
+    }
+    $('discount').value = DEFAULT_DISCOUNT;
+    $('life').value = d.lifeYears.value;
+    fillSource($('life-src'), d.lifeYears);
+    update();
+  }
+
+  function readInputs() {
+    const d = project.defaults;
+    const range = (f) => ({
+      low: num(f.id + '-low') / f.scale, mid: num(f.id) / f.scale, high: num(f.id + '-high') / f.scale,
+    });
+    return {
+      mw: project.mw,
+      fixedOmPerKwYr: d.fixedOmPerKwYr.value,
+      lifeYears: num('life'),
+      discountRate: num('discount') / 100,
+      oddsBuilt: 1, // already operating
+      price: range(RANGED[0]),
+      capexPerKw: { low: 0, mid: 0, high: 0 }, // already built, build cost is spent
+      capacityFactor: range(RANGED[1]),
+    };
+  }
+  window.readInputs = readInputs;
+
+  function drawHist(values) {
+    const svg = $('hist');
+    svg.textContent = '';
+    let min = Infinity, max = -Infinity;
+    for (const v of values) { if (v < min) min = v; if (v > max) max = v; }
+    const BINS = 30, W = 300, H = 90;
+    const counts = new Array(BINS).fill(0);
+    const width = (max - min) / BINS;
+    for (const v of values) counts[width === 0 ? 0 : Math.min(BINS - 1, Math.floor((v - min) / width))]++;
+    const peak = Math.max(...counts);
+    counts.forEach((c, i) => {
+      if (!c) return;
+      const h = (c / peak) * (H - 2);
+      const upperEdge = min + (i + 1) * width;
+      const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bar.setAttribute('x', width === 0 ? 0 : (i * W) / BINS);
+      bar.setAttribute('y', H - h);
+      bar.setAttribute('width', width === 0 ? W : W / BINS - 1);
+      bar.setAttribute('height', h);
+      bar.setAttribute('fill', upperEdge <= 0 ? 'var(--loss)' : 'var(--accent)');
+      svg.append(bar);
+    });
+    $('hist-min').textContent = 'Lowest ' + formatMoney(min);
+    $('hist-max').textContent = 'Highest ' + formatMoney(max);
+  }
+
+  function renderSteps(inputs) {
+    const b = valueBreakdown(inputs);
+    const steps = $('steps');
+    steps.textContent = '';
+    const row = (a, v) => steps.append(el('dt', a), el('dd', v));
+    row('1. Energy sold a year', Math.round(b.mwh).toLocaleString('en-US') + ' MWh (' + project.mw + ' MW × ' +
+      (inputs.capacityFactor.mid * 100).toFixed(1) + '% × 8,760 hours)');
+    row('2. Revenue a year', formatMoney(b.revenue) + ' (at $' + inputs.price.mid + ' per MWh)');
+    row('3. Less running cost', '-' + formatMoney(b.runningCost) + ' ($' + inputs.fixedOmPerKwYr + ' per kW a year)');
+    row('4. Cash a year', formatMoney(b.netCash));
+    row('5. Worth today', formatMoney(b.value) + ' (cash × ' + b.annuity.toFixed(2) + ', the factor for ' +
+      inputs.lifeYears + ' years at ' + +(inputs.discountRate * 100).toFixed(2) + '%)');
+  }
+
+  function update() {
+    const inputs = readInputs();
+    const errors = validateInputs(inputs);
+    const box = $('errors');
+    box.textContent = '';
+    if (errors.length) {
+      const ul = el('ul');
+      for (const e of errors) ul.append(el('li', e));
+      box.append(ul);
+      window.lastResult = null;
+      for (const id of ['p10', 'p50', 'p90', 'per-kw', 'loss']) $(id).textContent = '-';
+      $('steps').textContent = '';
+      $('hist').textContent = '';
+      $('hist-min').textContent = $('hist-max').textContent = '';
+    } else {
+      const r = simulate(inputs);
+      window.lastResult = r;
+      $('p10').textContent = formatMoney(r.p10);
+      $('p50').textContent = formatMoney(r.p50);
+      $('p90').textContent = formatMoney(r.p90);
+      $('per-kw').textContent = formatMoney(r.p50PerKw) + ' per kW';
+      $('loss').textContent = Math.round(r.chanceOfLoss * 100) + '%';
+      renderSteps(inputs);
+      drawHist(r.values);
+    }
+    $('export').disabled = !window.XLSX || !window.lastResult;
+  }
+
+  document.querySelector('main').addEventListener('input', (e) => {
+    const id = e.target.id;
+    if (id === 'project') return selectProject(e.target.value);
+    const edge = id.match(/^(.*)-(low|high)$/);
+    if (edge) touched.add(edge[1]);
+    const f = RANGED.find((x) => x.id === id);
+    if (f && !touched.has(id)) centre(f);
+    update();
+  });
+
+  $('export').addEventListener('click', () => {
+    const sheets = buildSheets(project, readInputs(), window.lastResult);
+    const book = XLSX.utils.book_new();
+    for (const name of Object.keys(sheets)) {
+      // SheetJS needs a type on formula cells.
+      const rows = sheets[name].map((r) => r.map((c) => (c && c.f ? { t: 'n', f: c.f } : c)));
+      XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), name);
+    }
+    XLSX.writeFile(book, project.id + '-valuation.xlsx');
+  });
+  if (!window.XLSX) $('export-note').textContent = ' Excel export needs an internet connection.';
+
+  for (const p of PROJECTS) $('project').append(el('option', p.name, { value: p.id }));
+  selectProject(PROJECTS[0].id);
+})();
+</script>
+</body>
+</html>
